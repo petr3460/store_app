@@ -1,0 +1,14 @@
+*_memprofile.py
+.*/
+_*/
+*.pyc
+*.yaml
+.DS_Store
+!root/.ssh/
+*.log
+*.pyc
+*log.json
+*.rdb
+env.list
+venv/
+
