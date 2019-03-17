@@ -109,17 +109,112 @@ class Shipping(Model):
         return carrying >= bid_weight
 
     def _check_goods_source_enough(self):
+        goods_enough = True
         source_store = Store.objects.get(self.source)
         bids = self._get_bids()
         bid_goods = {Product.objects.get(b.product): b.quantity for b in bids}
         for good, quantity in bid_goods.items():
             # mark_expired_products()
-            storage = StorageCons.objects.filter(store=source_store, consignment__expired=False, consignment__product=good)  # хранение партий
-            total_in_store = sum(i.consignment.quantity for i in storage)  # количество конкретного товара на складе
+
+            cursor = connection.cursor()
+            query = '''
+                SELECT
+                    "store_app_storagecons"."id",
+                    "store_app_storagecons"."store_id",
+                    "store_app_storagecons"."consignment_id"
+                FROM
+                    "store_app_storagecons"
+                INNER JOIN
+                    "store_app_consignment"
+                ON
+                    ("store_app_storagecons"."consignment_id" = "store_app_consignment"."id")
+                WHERE
+                    ("store_app_consignment"."expired" = False
+                AND
+                    "store_app_consignment"."product_id" = {0}
+                AND
+                    "store_app_storagecons"."store_id" = {1}
+                )
+            '''.format(good.id, source_store.id)
+            cursor.execute(query)
+            storage = []    # хранение партий
+
+            for row in cursor.fetchall():
+                s = StorageCons(*row)
+                storage.append(s)
+
+            total_in_store = sum(Consignment.objects.get(i.consignment).quantity for i in storage)  # количество конкретного товара на складе
             if total_in_store < quantity:
-                return False
-            else:
-                return True
+                goods_enough = False
+
+        return goods_enough
+
+
+    def clean(self):
+        if self.in_process:
+            if not self._check_goods_source_enough():
+                raise Exception('На складе-отправителе не достаточно товара')
+
+            if not self._check_fits_in_car():
+                raise Exception('Выбранная машина не вмещает весь товар, указанный в заявках')
+
+
+# -------------ОСТАНОВИЛСЯ ЗДЕСЬ-------------------
+    def save(self, *args, **kwargs):
+        self.clean()
+        if self.finished:
+            goods = self.shippingcons_set.all()
+            destination_id = self.destination
+            for i in goods:
+                storage = StorageCons()
+                storage.store = destination_id
+                storage.consignment = i.consignment
+                storage.save()
+            self.finished_at = timezone.now()
+            self.car.busy = False
+            self.in_process = False
+            self.car.save()
+        else:
+            self.car.busy = True
+            self.car.save()
+
+        if self.in_process:
+            source_store = self.source
+            bids = self.bid_set.all()
+            bid_goods = {b.product: b.quantity for b in bids}
+
+            for good, quantity in bid_goods.items():
+                storage = StorageCons.objects.filter(store=source_store, consignment__product=good) #хранение партий
+                consignments = [st_cons.consignment for st_cons in storage] #партии нужного товара на складе
+                for cons in consignments:
+                    if cons.quantity < quantity:
+                        quantity -= cons.quantity
+                        new_cons = Consignment()
+                        new_cons.product = cons.product
+                        new_cons.manufacture_date = cons.manufacture_date
+                        new_cons.quantity = cons.quantity
+                        cons.quantity = 0
+                        new_cons.cost = cons.cost
+                        new_cons.save()
+                        cons.save()
+                        ship_cons = ShippingCons()  # новое движение товара
+                        ship_cons.consignment = new_cons
+                        ship_cons.shipping = self
+                        ship_cons.save()
+                    else:
+                        cons.quantity -= quantity
+                        new_cons = Consignment()
+                        new_cons.product = cons.product
+                        new_cons.manufacture_date = cons.manufacture_date
+                        new_cons.quantity = quantity
+                        new_cons.cost = cons.cost
+                        new_cons.save()
+                        cons.save()
+                        ship_cons = ShippingCons()  #новое движение товара
+                        ship_cons.consignment = new_cons
+                        ship_cons.shipping = self
+                        ship_cons.save()
+        super(Shipping, self).save(*args, **kwargs)
 #
 #
 #
