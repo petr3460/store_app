@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block style %}
+    <style>
+        table {
+            border-collapse: collapse;
+        }
+        table td, table th {
+            padding: 7px;
+       }
+    </style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <table class="mt-5" border="1">
+        <caption>Список перевозок</caption>
+        <tr>
+            <th>id</th>
+            <th>Отправление</th>
+            <th>Назначение</th>
+            <th>Статус</th>
+            <th>Сохранить</th>
+        </tr>
+    {% for shipping in shippings %}
+        <tr>
+            <td>{{ shipping.id }}</td>
+            <td>{{ shipping.source }}</td>
+            <td id="destination-{{ shipping.id }}">{{ shipping.destination }}</td>
+            <td>
+                <select id="status-{{ shipping.id }}">
+                    <option>Создана</option>
+                    <option {% if shipping.in_process %}selected{% endif %} value="in_process">Выполняется</option>
+                    <option {% if shipping.finished %}selected{% endif %} value="finished">Завершена</option>
+                </select>
+            </td>
+            <td><button class="shipping-save" value="{{ shipping.id }}">save</button></td>
+        </tr>
+    {% endfor %}
+
+    </table>
+
+
+    <table class="mt-5" border="1">
+        <caption>Список утилизационных перевозок перевозок</caption>
+        <tr>
+            <th>id</th>
+            <th>Склад</th>
+            <th>Статус</th>
+            <th>Сохранить</th>
+        </tr>
+    {% for util_shipping in util_shippings %}
+        <tr>
+            <td>{{ util_shipping.id }}</td>
+            <td>{{ util_shipping.store }}</td>
+            <td>
+                <select id="util_status-{{ util_shipping.id }}">
+                    <option {% if not util_shipping.finished %}selected{% endif %} value="in_process">Выполняется</option>
+                    <option {% if util_shipping.finished %}selected{% endif %} value="finished">Завершена</option>
+                </select>
+            </td>
+            <td><button class="util-save" value="{{ util_shipping.id }}">save</button></td>
+        </tr>
+    {% endfor %}
+
+    </table>
+
+</div>
+{% endblock %}
+
+
+{% block script %}
+<script>
+    $('.shipping-save').on('click', function() {
+        shipping_id = this.value;
+
+        $.ajax({
+            type: "POST",
+            url: "/shippings/",
+            data: 'status=' + $('#status-' + shipping_id).val() + '&shipping=' + shipping_id,
+            dataType: "json",
+            success: function(response) {
+                alert(response.message);
+            }
+        });
+    })
+
+
+    $('.util-save').on('click', function() {
+        util_shipping_id = this.value;
+
+        $.ajax({
+            type: "POST",
+            url: "/shippings/",
+            data: 'util_status=' + $('#util_status-' + util_shipping_id).val() + '&util_shipping=' + util_shipping_id + '&destination=util',
+            dataType: "json",
+            success: function(response) {
+                alert(response.message);
+            }
+        });
+    })
+</script>
+{% endblock %}

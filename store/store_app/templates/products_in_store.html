@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<div class="container">
+    <div class="row m-5">
+        <h5>Просмотр товаров на складе</h5>
+    </div>
+
+    <div class="row m-5">
+        <h6>Выберите склад</h6>
+    </div>
+
+    <div class="row m-5">
+        <select name="" id="stores_select">
+            {% for store in stores %}
+                <option value="{{ store.id }}">{{ store.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="row m-5">
+        <button class="btn btn-outline-success my-sm-0" id="show_goods">Показать товары</button>
+    </div>
+
+    <div id="goods_list" class="row m-5"></div>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    $('#show_goods').on('click', function() {
+    var container = $('#goods_list');
+    container.html('');
+    var table = document.createElement('TABLE');
+    var table_body = document.createElement('TBODY');
+    table.border = '1';
+    table.appendChild(table_body);
+
+    var heading = new Array();
+    heading[0] = "товар";
+    heading[1] = "количество";
+    heading[2] = "дата изготовления";
+    heading[3] = "цена";
+    heading[4] = "стоимость";
+
+    $.ajax({
+        type: "POST",
+        url: "/products_in_store/",
+        data: 'store=' + $('#stores_select').val(),
+        dataType: "json",
+        success: function(response) {
+            if (response.message) {
+            message = $('<h6>' + response.message + '</h6>');
+            container.append(message);
+            } else {
+            var goods = new Array();
+            for (var i=0; i<response['products'].length; i++) {
+                goods[i] = new Array(
+                    response['products'][i]['name'],
+                    response['products'][i]['quantity'],
+                    response['products'][i]['date'],
+                    response['products'][i]['price'],
+                    response['products'][i]['total']
+                );
+            }
+            var tr = document.createElement('TR');
+            table_body.appendChild(tr);
+            for (i = 0; i < heading.length; i++) {
+                var th = document.createElement('TH')
+                th.width = '75';
+                th.appendChild(document.createTextNode(heading[i]));
+                tr.appendChild(th);
+            }
+
+            for (i = 0; i < goods.length; i++) {
+                var tr = document.createElement('TR');
+                for (j = 0; j < goods[i].length; j++) {
+                    var td = document.createElement('TD')
+                    td.appendChild(document.createTextNode(goods[i][j]));
+                    tr.appendChild(td)
+                }
+                table_body.appendChild(tr);
+            }
+            container.append(table);
+            var total = $('<h3>Итого: ' + response['total'] + '</h3>');
+
+            container.append(total);
+        }
+        }
+        });
+    })
+</script>
+{% endblock %}

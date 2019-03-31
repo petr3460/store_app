@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block style %}
+    <style>
+         .object-form {
+            display: none;
+            border: 1px solid #f5e5e5;
+            border-radius: 8px;
+            margin-left: 20px;
+            padding: 5px;
+            position: absolute;
+            left: 270px;
+            top: 100px;
+            padding: 15px;
+        }
+        .object-header {
+            cursor: pointer;
+        }
+        .object-header.active {
+            font-weight: 700;
+            color: red;
+        }
+        .object-header.active:hover {
+            font-weight: 700;
+            color: brown;
+        }
+        .object-header:hover {
+            color: green;
+            font-weight: 500;
+        }
+        .object-form [type=submit] {
+            margin-top: 15px !important;
+        }
+
+        .object-form input, .object-form select {
+            height: 35px;
+            margin-bottom: 8px;
+        }
+    </style>
+{% endblock %}
+
+
+{% block content %}
+    <div class="m-3"><span class="object-header">Продукт</span>
+        <form class="object-form" action="/create/Product/" method="post">
+            {{ ProductForm }}
+            <input class="btn btn-outline-success my-sm-0" type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class=m-3><span class="object-header">Машина</span>
+        <form class="object-form" action="/create/Car/" method="post">
+
+            {{ CarForm }}
+            <input class="btn btn-outline-success my-sm-0" type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class=m-3><span class="object-header">Склад</span>
+        <form class="object-form" action="/create/Store/" method="post">
+
+            {{ StoreForm }}
+            <input class="btn btn-outline-success my-sm-0" type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class=m-3><span class="object-header">Перевозка</span>
+        <form class="object-form" action="/create/Shipping/" method="post">
+
+            {{ ShippingForm }}
+            <input class="btn btn-outline-success my-sm-0" type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class=m-3><span class="object-header">Партия товара</span>
+        <form class="object-form" action="/create/Consignment/" method="post">
+
+            {{ ConsignmentForm }}
+            <input class="btn btn-outline-success my-sm-0" type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class=m-3><span class="object-header">Хранение партий</span>
+        <form class="object-form" action="/create/StorageCons/" method="post">
+
+            {{ StorageConsForm }}
+            <input class="btn btn-outline-success my-sm-0" type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class=m-3><span class="object-header">Заявка на перевозку</span>
+        <form class="object-form" action="/create/Bid/" method="post">
+
+            {{ BidForm }}
+            <input class="btn btn-outline-success my-sm-0" type="submit" value="Submit">
+        </form>
+    </div>
+
+    <div class=m-3><span class="object-header">Утилизационная перевозка</span>
+        <form class="object-form" action="/create/UtilShipping/" method="post">
+
+            {{ UtilShippingForm }}
+            <input class="btn btn-outline-success my-sm-0" type="submit" value="Submit">
+        </form>
+    </div>
+{% endblock %}
+
+{% block script %}
+    <script>
+        $('.object-header').on('click', function () {
+            $('.object-header').removeClass('active');
+            $(this).addClass('active');
+            parent = $(this).parent();
+            form = parent.find('.object-form');
+            $('.object-form').css('cssText', 'display:none;');
+            form.css('cssText', 'display:inline-grid;');
+        })
+    </script>
+{% endblock %}

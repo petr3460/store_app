@@ -20,7 +20,8 @@ from store_app.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', home, name='home'),
-    # path('get_products/', get_products, name='get_products'),
-    # path('add_products/', add_products, name='add_products'),
-    path('show_products/', show_products, name='show_products')
+    path('create/<slug:class_name>/', create_object, name='create_object'),
+    path('shippings/', shippings, name='shippings'),
+    path('products_in_store/', products_in_store, name='products_in_store'),
+
 ]
